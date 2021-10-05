@@ -1,0 +1,8 @@
+//
+// Created by Gintas Palionis on 25/10/2020.
+//
+
+#ifndef DSATTRACTOR_SFMLHELPER_H
+#define DSATTRACTOR_SFMLHELPER_H
+
+#endif //DSATTRACTOR_SFMLHELPER_H

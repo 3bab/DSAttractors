@@ -1,16 +1,15 @@
-#include "LorenzAttractor.h"
+#include "DSAttractors.h"
 
 using namespace sf;
+using namespace std;
 
-LorenzAttractor::LorenzAttractor() {
+DSAttractors::DSAttractors() {
     setupText();
 
-    // Re-center view
     view.setCenter(Vector2f(0.0f, 0.0f));
     view.setSize(Vector2f(static_cast<float>(screenWidth / 10), static_cast<float>(screenHeight / 10)));
 
-    // Set parameters
-    attractorParams = {
+    attractorConfig = {
             {10.0f,  30.0f,  8 / 3},
             {1.24f,  1.1f,   4.4f, 3.21f},
             {0.95f,  0.7f,   0.6f, 3.5f, 0.25f, 0.1f},
@@ -49,14 +48,14 @@ LorenzAttractor::LorenzAttractor() {
             {44.3435f,  -93.5679f, -52.0752f},
     };
 
-    std::cout << "\n\n\n";
+    cout << "\n\n\n";
     for (unsigned c = 0; c < colours.size(); c++) {
-        std::cout << static_cast<int>(colours[c].r) << " " <<
-                  static_cast<int>(colours[c].g) << " " <<
-                  static_cast<int>(colours[c].b) << " " <<
-                  static_cast<int>(colours[c].a) << std::endl;
-        std::cout << trailColoursParams[c][0] << " " << trailColoursParams[c][1] << " "
-                  << trailColoursParams[c][2] << std::endl;
+        cout << static_cast<int>(colours[c].r) << " " <<
+             static_cast<int>(colours[c].g) << " " <<
+             static_cast<int>(colours[c].b) << " " <<
+             static_cast<int>(colours[c].a) << endl;
+        cout << trailColoursParams[c][0] << " " << trailColoursParams[c][1] << " "
+             << trailColoursParams[c][2] << endl;
     }
 
     circle.resize(numPoints);
@@ -70,7 +69,6 @@ LorenzAttractor::LorenzAttractor() {
 
     createBalls();
 
-
     // Create lineStrip object with two vertices. The first line should start with a first point.
     line.setPrimitiveType(LinesStrip);
     line.append(Vector2f(point[0].x, point[0].y));
@@ -79,7 +77,7 @@ LorenzAttractor::LorenzAttractor() {
     initiateCamera();
 }
 
-void LorenzAttractor::initiateCamera() {// Set Camera
+void DSAttractors::initiateCamera() {// Set Camera
     switch (attractorIndex) {
         case 0: {
             camPosition = {0, 0, -50};
@@ -134,7 +132,7 @@ void LorenzAttractor::initiateCamera() {// Set Camera
     }
 }
 
-void LorenzAttractor::createBalls() {
+void DSAttractors::createBalls() {
     for (unsigned i = 0; i < numPoints; i++) {
         // Create balls
         circle[i].setRadius(0.5f);
@@ -152,16 +150,17 @@ void LorenzAttractor::createBalls() {
     }
 }
 
-void LorenzAttractor::setupText() {
-    font.loadFromFile("/Users/gintas.palionis/CLionProjects/LorenzAttractor/arial.ttf");
+void DSAttractors::setupText() {
+    font.loadFromFile("/Users/gintas.palionis/CLionProjects/DSAttractors/arial.ttf");
     text.setFont(font);
+    text.setFillColor(Color(100, 0, 0, 255));
     text.setString(attractorNames[attractorIndex]);
     text.setScale(0.1f, 0.1f);
     text.setPosition(Vector2f(-85, -45));
     text.setStyle(0);
 }
 
-void LorenzAttractor::input(RenderWindow &window) {
+void DSAttractors::input(RenderWindow &window) {
     while (window.pollEvent(event)) {
         // Window
         if (Keyboard::isKeyPressed(Keyboard::Escape))
@@ -179,7 +178,7 @@ void LorenzAttractor::input(RenderWindow &window) {
 
             if (Keyboard::isKeyPressed(Keyboard::H)) {
                 attractorIndex++;
-                if (attractorIndex == attractorParams.size())
+                if (attractorIndex == attractorConfig.size())
                     attractorIndex--;
             } else {
                 attractorIndex--;
@@ -256,7 +255,7 @@ void LorenzAttractor::input(RenderWindow &window) {
     }
 }
 
-void LorenzAttractor::update() {
+void DSAttractors::update() {
     /// Calculate timeStep
     timeStep = clock.getElapsedTime().asSeconds();
     inputTimer += timeStep;
@@ -265,13 +264,15 @@ void LorenzAttractor::update() {
     timeStep *= speed; // Slow down or speed up time.
 
     // Update position according to chosen equation attractorIndex
-    std::vector<float> &m = attractorParams[attractorIndex];
+    vector<float> &attractorParams = attractorConfig.at(attractorIndex);
     switch (attractorIndex) {
         case 0: {
             for (unsigned i = 0; i < numPoints; i++) {
-                point[i].x += static_cast<float>(m[0] * (point[i].y - point[i].x) * timeStep);
-                point[i].y += static_cast<float>((point[i].x * (m[1] - point[i].z) - point[i].y) * timeStep);
-                point[i].z += static_cast<float>((point[i].x * point[i].y - m[2] * point[i].z) * timeStep);
+                point[i].x += static_cast<float>(attractorParams[0] * (point[i].y - point[i].x) * timeStep);
+                point[i].y += static_cast<float>((point[i].x * (attractorParams[1] - point[i].z) - point[i].y) *
+                                                 timeStep);
+                point[i].z += static_cast<float>((point[i].x * point[i].y - attractorParams[2] * point[i].z) *
+                                                 timeStep);
             }
             break;
         }
@@ -281,67 +282,87 @@ void LorenzAttractor::update() {
                 float h2 = 0.5f * (abs(point[i].y + 1) - abs(point[i].y - 1));
                 float h3 = 0.5f * (abs(point[i].z + 1) - abs(point[i].z - 1));
 
-                point[i].x += static_cast<float>((-point[i].x + m[0] * h1 - m[3] * h2 - m[3] * h3) * timeStep);
-                point[i].y += static_cast<float>((-point[i].y - m[3] * h1 + m[1] * h2 - m[2] * h3) * timeStep);
-                point[i].z += static_cast<float>((-point[i].z - m[3] * h1 + m[2] * h2 + h3) * timeStep);
+                point[i].x += static_cast<float>(
+                        (-point[i].x + attractorParams[0] * h1 - attractorParams[3] * h2 - attractorParams[3] * h3) *
+                        timeStep);
+                point[i].y += static_cast<float>(
+                        (-point[i].y - attractorParams[3] * h1 + attractorParams[1] * h2 - attractorParams[2] * h3) *
+                        timeStep);
+                point[i].z += static_cast<float>(
+                        (-point[i].z - attractorParams[3] * h1 + attractorParams[2] * h2 + h3) * timeStep);
             }
             break;
         }
         case 2: {
             for (unsigned i = 0; i < numPoints; i++) {
-                point[i].x += static_cast<float>(((point[i].z - m[1]) * point[i].x - m[3] * point[i].y) * timeStep);
-                point[i].y += static_cast<float>((m[3] * point[i].x + (point[i].z - m[1]) * point[i].y) * timeStep);
+                point[i].x += static_cast<float>(
+                        ((point[i].z - attractorParams[1]) * point[i].x - attractorParams[3] * point[i].y) * timeStep);
+                point[i].y += static_cast<float>(
+                        (attractorParams[3] * point[i].x + (point[i].z - attractorParams[1]) * point[i].y) * timeStep);
                 point[i].z += static_cast<float>(
-                        (m[2] + m[0] * point[i].z - (point[i].z * point[i].z * point[i].z) / 3 -
-                         (point[i].x * point[i].x + point[i].y * point[i].y) * (1 + m[4] * point[i].z) +
-                         m[5] * point[i].z * point[i].x * point[i].x * point[i].x) * timeStep);
+                        (attractorParams[2] + attractorParams[0] * point[i].z -
+                         (point[i].z * point[i].z * point[i].z) / 3 -
+                         (point[i].x * point[i].x + point[i].y * point[i].y) * (1 + attractorParams[4] * point[i].z) +
+                         attractorParams[5] * point[i].z * point[i].x * point[i].x * point[i].x) * timeStep);
             }
             break;
         }
         case 3: {
             for (unsigned i = 0; i < numPoints; i++) {
-                point[i].x += static_cast<float>((point[i].x * (4 - point[i].y) + m[0] * point[i].z) * timeStep);
-                point[i].y += static_cast<float>((-point[i].y * (1 - point[i].x * point[i].x)) * timeStep);
-                point[i].z += static_cast<float>((-point[i].x * (1.5 - point[i].z * m[1]) - 0.05 * point[i].z) *
+                point[i].x += static_cast<float>((point[i].x * (4 - point[i].y) + attractorParams[0] * point[i].z) *
                                                  timeStep);
+                point[i].y += static_cast<float>((-point[i].y * (1 - point[i].x * point[i].x)) * timeStep);
+                point[i].z += static_cast<float>(
+                        (-point[i].x * (1.5 - point[i].z * attractorParams[1]) - 0.05 * point[i].z) *
+                        timeStep);
             }
             break;
         }
         case 4: {
             for (unsigned i = 0; i < numPoints; i++) {
-                point[i].x += static_cast<float>((m[0] * point[i].x - point[i].y * point[i].z) * timeStep * 0.25f);
-                point[i].y += static_cast<float>((m[1] * point[i].y + point[i].x * point[i].z) * timeStep * 0.25f);
-                point[i].z += static_cast<float>((m[2] * point[i].z + point[i].x * point[i].y / 3) * timeStep * 0.25f);
+                point[i].x += static_cast<float>((attractorParams[0] * point[i].x - point[i].y * point[i].z) *
+                                                 timeStep * 0.25f);
+                point[i].y += static_cast<float>((attractorParams[1] * point[i].y + point[i].x * point[i].z) *
+                                                 timeStep * 0.25f);
+                point[i].z += static_cast<float>((attractorParams[2] * point[i].z + point[i].x * point[i].y / 3) *
+                                                 timeStep * 0.25f);
             }
             break;
         }
         case 5: {
             for (unsigned i = 0; i < numPoints; i++) {
                 point[i].x += static_cast<float>(
-                        (-m[0] * point[i].x - 4 * point[i].y - 4 * point[i].z - point[i].y * point[i].y) * timeStep);
+                        (-attractorParams[0] * point[i].x - 4 * point[i].y - 4 * point[i].z - point[i].y * point[i].y) *
+                        timeStep);
                 point[i].y += static_cast<float>(
-                        (-m[0] * point[i].y - 4 * point[i].z - 4 * point[i].x - point[i].z * point[i].z) * timeStep);
+                        (-attractorParams[0] * point[i].y - 4 * point[i].z - 4 * point[i].x - point[i].z * point[i].z) *
+                        timeStep);
                 point[i].z += static_cast<float>(
-                        (-m[0] * point[i].z - 4 * point[i].x - 4 * point[i].y - point[i].x * point[i].x) * timeStep);
+                        (-attractorParams[0] * point[i].z - 4 * point[i].x - 4 * point[i].y - point[i].x * point[i].x) *
+                        timeStep);
             }
             break;
         }
         case 6: {
             for (unsigned i = 0; i < numPoints; i++) {
                 point[i].x += static_cast<float>(
-                        ((1 / m[1] - m[0]) * point[i].x + point[i].z + point[i].x * point[i].y) * timeStep);
-                point[i].y += static_cast<float>((-m[1] * point[i].y - point[i].x * point[i].x) * timeStep);
-                point[i].z += static_cast<float>((-point[i].x - m[2] * point[i].z) * timeStep);
+                        ((1 / attractorParams[1] - attractorParams[0]) * point[i].x + point[i].z +
+                         point[i].x * point[i].y) * timeStep);
+                point[i].y += static_cast<float>((-attractorParams[1] * point[i].y - point[i].x * point[i].x) *
+                                                 timeStep);
+                point[i].z += static_cast<float>((-point[i].x - attractorParams[2] * point[i].z) * timeStep);
             }
             break;
         }
         case 7: {
             for (unsigned i = 0; i < numPoints; i++) {
-                point[i].x += static_cast<float>((-m[0] * point[i].x + point[i].y + 10.0f * point[i].y * point[i].z) *
-                                                 timeStep);
+                point[i].x += static_cast<float>(
+                        (-attractorParams[0] * point[i].x + point[i].y + 10.0f * point[i].y * point[i].z) *
+                        timeStep);
                 point[i].y += static_cast<float>((-point[i].x - 0.4 * point[i].y + 5.0f * point[i].x * point[i].z) *
                                                  timeStep);
-                point[i].z += static_cast<float>((m[1] * point[i].z - 5.0f * point[i].x * point[i].y) * timeStep);
+                point[i].z += static_cast<float>((attractorParams[1] * point[i].z - 5.0f * point[i].x * point[i].y) *
+                                                 timeStep);
             }
             break;
         }
@@ -349,21 +370,19 @@ void LorenzAttractor::update() {
             for (unsigned i = 0; i < numPoints; i++) {
                 point[i].x += static_cast<float>((point[i].y) * timeStep);
                 point[i].y += static_cast<float>((-point[i].x + point[i].y * point[i].z) * timeStep);
-                point[i].z += static_cast<float>((m[0] - point[i].y * point[i].y) * timeStep);
+                point[i].z += static_cast<float>((attractorParams[0] - point[i].y * point[i].y) * timeStep);
             }
             break;
         }
         case 9: {
             for (unsigned i = 0; i < numPoints; i++) {
-                point[i].x += static_cast<float>((-m[0] * point[i].x + sin(point[i].y)) * timeStep);
-                point[i].y += static_cast<float>((-m[0] * point[i].y + sin(point[i].z)) * timeStep);
-                point[i].z += static_cast<float>((-m[0] * point[i].z + sin(point[i].x)) * timeStep);
+                point[i].x += static_cast<float>((-attractorParams[0] * point[i].x + sin(point[i].y)) * timeStep);
+                point[i].y += static_cast<float>((-attractorParams[0] * point[i].y + sin(point[i].z)) * timeStep);
+                point[i].z += static_cast<float>((-attractorParams[0] * point[i].z + sin(point[i].x)) * timeStep);
             }
             break;
         }
     }
-
-    /// Update Camera Position
 
     // Move Left and Right
     if (Keyboard::isKeyPressed(Keyboard::A)) {
@@ -435,7 +454,7 @@ void LorenzAttractor::update() {
         speed -= 0.025f;
 }
 
-void LorenzAttractor::draw(RenderWindow &window) {
+void DSAttractors::draw(RenderWindow &window) {
     // For every point
     for (unsigned g = 0; g < numPoints; g++) {
         /// Draw circle
@@ -505,9 +524,12 @@ void LorenzAttractor::draw(RenderWindow &window) {
             // Calculate trail colours
             Color fade;
             fade = Color(
-                    clamp(colours[attractorIndex].r + trailColoursParams[attractorIndex][0] * Magnitude(line[1].position - line[0].position)),
-                    clamp(colours[attractorIndex].g + trailColoursParams[attractorIndex][1] * Magnitude(line[1].position - line[0].position)),
-                    clamp(colours[attractorIndex].b + trailColoursParams[attractorIndex][2] * Magnitude(line[1].position - line[0].position)),
+                    clamp(colours[attractorIndex].r +
+                          trailColoursParams[attractorIndex][0] * Magnitude(line[1].position - line[0].position)),
+                    clamp(colours[attractorIndex].g +
+                          trailColoursParams[attractorIndex][1] * Magnitude(line[1].position - line[0].position)),
+                    clamp(colours[attractorIndex].b +
+                          trailColoursParams[attractorIndex][2] * Magnitude(line[1].position - line[0].position)),
                     0 + static_cast<Uint8>((k * 255 / trail[g].size())));
 
             line[0].color = fade;
@@ -526,29 +548,27 @@ void LorenzAttractor::draw(RenderWindow &window) {
         }
     }
 
-    // Text
-    text.setFillColor(Color(100, 0, 0, 255));
     text.setString(attractorNames[attractorIndex]);
     text.setScale(0.1f, 0.1f);
     text.setPosition(Vector2f(-85, -45));
     window.draw(text);
 
     /// UNCOMMENT FOR ON-SCREEN COORDINATES
-
+/*
     for (unsigned i = 0; i < numPoints; i++) {
-        std::string coordinate_string = "(" + std::to_string(static_cast<int>(point[i].x)) + ", " +
-                                        std::to_string(static_cast<int>(point[i].y)) + ", " +
-                                        std::to_string(static_cast<int>(point[i].z)) + ")";
+        string coordinate_string = "(" + to_string(static_cast<int>(point[i].x)) + ", " +
+                                   to_string(static_cast<int>(point[i].y)) + ", " +
+                                   to_string(static_cast<int>(point[i].z)) + ")";
         text.setString(coordinate_string);
         text.setPosition(circle[i].getPosition() + Vector2f(1.0f, -5.0f));
         window.draw(text);
     }
-
+*/
     window.display();
     window.clear(Color(0, 0, 0, 255));
 }
 
-void LorenzAttractor::run(RenderWindow &window) {
+void DSAttractors::run(RenderWindow &window) {
     window.setView(view);
 
     while (window.isOpen() && !endSubProgram) {
@@ -561,4 +581,4 @@ void LorenzAttractor::run(RenderWindow &window) {
                         Vector2f(static_cast<float>(screenWidth), static_cast<float>(screenHeight))));
 }
 
-LorenzAttractor::~LorenzAttractor() {}
+DSAttractors::~DSAttractors() {}

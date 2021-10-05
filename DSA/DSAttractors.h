@@ -7,7 +7,7 @@
 using namespace sf;
 using namespace std;
 
-class LorenzAttractor
+class DSAttractors
 {
 private:
 	Event event;
@@ -33,7 +33,7 @@ private:
 
 	// Attractor parameters
 	unsigned attractorIndex = 0;
-	vector<vector<float>> attractorParams;
+	vector<vector<float>> attractorConfig;
 
 	// Rotation Matrices
 	Matrix3<float> rotMatrixX;
@@ -77,7 +77,7 @@ private:
 	void initiateCamera();
 
 public:
-	LorenzAttractor();
+	DSAttractors();
 
 	static unsigned char clamp(float x) {
 		if (x <= 0) return 0;
@@ -96,7 +96,7 @@ public:
 	void update();
 	void draw(RenderWindow &window);
 	void run(RenderWindow &window);
-	~LorenzAttractor();
+	~DSAttractors();
 
     void setupText() const;
 
